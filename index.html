@@ -193,7 +193,7 @@ function applyTheme(){const t=themeObj(),r=document.documentElement.style;
 /* ===== الرسم ===== */
 const nodesEl=$('#nodes'),world=$('#world'),vp=$('#vp'),elOf=n=>nodesEl.querySelector(`[data-id="${n.id}"]`);
 function render(){applyTheme();nodesEl.innerHTML='';const acc=themeObj().acc;
-  S.nodes.forEach(n=>{const d=document.createElement('div'),c=n.color||acc;d.className='node st-'+(n.style||'bar');d.dataset.id=n.id;d.style.setProperty('--nc',c);d.style.width=(n.w||280)+'px';
+  S.nodes.forEach(n=>{const d=document.createElement('div'),c=(S.themeAll?null:n.color)||acc;d.className='node st-'+(n.style||'bar');d.dataset.id=n.id;d.style.setProperty('--nc',c);d.style.width=(n.w||280)+'px';
     if(n.style==='filled'||n.style==='grad')d.style.setProperty('--nt',lum(c)>.58?'#1b1b1b':'#fff');
     d.innerHTML=(n.img?`<img src="${n.img}" alt="">`:'')+`<h3>${esc(n.title)}</h3>`+(n.text?`<p>${esc(n.text)}</p>`:'')+(admin?`<div class="tools"><button data-a="edit">✎</button><button data-a="add">＋</button><button data-a="del">✕</button></div>`:'');
     nodesEl.appendChild(d)});
@@ -210,7 +210,7 @@ function layout(){const ids=new Set(S.nodes.map(n=>n.id)),kids=id=>S.nodes.filte
     return{w:W,h:nh+V+mh,p:(x,y)=>{n.x=x+(W-nw)/2;let cx=x+(W-rw)/2;const dn=dir=='D';n.y=dn?y:y+mh+V;const cy=dn?y+nh+V:y;ks.forEach(q=>{q.p(cx,dn?cy:cy+mh-q.h);cx+=q.w+G})}}};
   let y=0;S.nodes.filter(n=>!n.parent||!ids.has(n.parent)).forEach(r=>{const b=box(r);b.p(0,y);y+=b.h+G*2})}
 function edges(){const m={};S.nodes.forEach(n=>m[n.id]=n);let p='',defs='';const seen=new Set(),acc=themeObj().acc;
-  S.nodes.forEach(n=>{const P=m[n.parent];if(!P)return;const c=n.edge||acc,id='m'+c.replace('#','');
+  S.nodes.forEach(n=>{const P=m[n.parent];if(!P)return;const c=(S.themeAll?null:n.edge)||acc,id='m'+c.replace('#','');
     if(!seen.has(id)){seen.add(id);defs+=`<marker id="${id}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="${c}"/></marker>`}
     const pe=elOf(P),ce=elOf(n),pw=pe.offsetWidth,ph=pe.offsetHeight,cw=ce.offsetWidth,ch=ce.offsetHeight,dx=n.x+cw/2-P.x-pw/2,dy=n.y+ch/2-P.y-ph/2;let a,b,hz;
     if(Math.abs(dx)/(pw/2+cw/2)>=Math.abs(dy)/(ph/2+ch/2)){hz=1;if(dx<0){a=[P.x,P.y+ph/2];b=[n.x+cw,n.y+ch/2]}else{a=[P.x+pw,P.y+ph/2];b=[n.x,n.y+ch/2]}}
@@ -273,16 +273,17 @@ function openEdit(n){const t={...n},b=$('#editModal .box'),acc=themeObj().acc;
   $('#eT').value=n.title;$('#eX').value=n.text||'';const paint=()=>{$('#cC').style.background=t.color||acc;$('#cE').style.background=t.edge||acc};paint();
   $('#cC').onclick=()=>pickColor(t.color||acc,c=>{t.color=c;paint()});$('#cE').onclick=()=>pickColor(t.edge||acc,c=>{t.edge=c;paint()});
   chips($('#cS'),[['bar','شريط'],['filled','ممتلئة'],['grad','متدرجة'],['glass','زجاجية'],['outline','إطار']],t.style||'bar',k=>t.style=k);
-  chips($('#cW'),[[220,'صغير'],[280,'متوسط'],[360,'كبير']],t.w||280,k=>t.w=+k);
+  chips($('#cW'),[[220,'صغير'],[280,'متوسط'],[360,'كبير'],[480,'عريض']],t.w||280,k=>t.w=+k);
   chips($('#cD'),[['I','وراثة'],['L','◀ يسار'],['R','يمين ▶'],['D','▼ أسفل'],['U','▲ أعلى']],t.dir||'I',k=>t.dir=k);
   $('#eF').onchange=async e=>{if(e.target.files[0]){t.img=await readImg(e.target.files[0]);toast('تمت إضافة الصورة')}};$('#eR').onclick=()=>{delete t.img;toast('حُذفت الصورة')};
   $('#eNo').onclick=()=>show('#editModal',false);
-  $('#eOk').onclick=()=>{Object.assign(n,t,{title:$('#eT').value||'بدون عنوان',text:$('#eX').value});show('#editModal',false);render();queueSave()};show('#editModal')}
+  $('#eOk').onclick=()=>{Object.assign(n,t,{title:$('#eT').value||'بدون عنوان',text:$('#eX').value});if(!t.img)delete n.img;show('#editModal',false);render();queueSave()};show('#editModal')}
 /* ===== الثيمات ===== */
 function openThemes(){const b=$('#themeModal .box'),all=[...Object.entries(TH),...S.my.map(t=>[t.id,t])];
-  b.innerHTML=`<h2>الثيمات</h2><div class="tiles">${all.map(([k,t])=>`<div class="tile${S.theme===k?' on':''}" data-k="${k}" style="background:linear-gradient(135deg,${t.bg},${t.bg2})"><div><i style="background:${t.card}"></i><i style="background:${t.acc}"></i></div><span style="color:${t.text}">${t.n}</span>${k.startsWith('my_')?'<u data-del="1" style="color:'+t.text+'">✕</u>':''}</div>`).join('')}</div>
+  b.innerHTML=`<h2>الثيمات</h2><small>عند تغيير الثيم (${S.nodes.filter(n=>n.color||n.edge).length} بطاقة بألوان مخصصة):</small><div class="chips" id="tAll"></div><div class="tiles">${all.map(([k,t])=>`<div class="tile${S.theme===k?' on':''}" data-k="${k}" style="background:linear-gradient(135deg,${t.bg},${t.bg2})"><div><i style="background:${t.card}"></i><i style="background:${t.acc}"></i></div><span style="color:${t.text}">${t.n}</span>${k.startsWith('my_')?'<u data-del="1" style="color:'+t.text+'">✕</u>':''}</div>`).join('')}</div>
   <h3>تخصيص الثيم الحالي</h3><div class="row" id="tcs"></div><div class="row"><input id="tN" placeholder="اسم ثيمي"><button id="tS">حفظ كثيمي</button></div><button id="tX" class="pri">إغلاق</button>`;
   b.querySelector('.tiles').onclick=e=>{const t=e.target.closest('.tile');if(!t)return;if(e.target.dataset.del)S.my=S.my.filter(z=>z.id!==t.dataset.k);else S.theme=t.dataset.k;render();queueSave();openThemes()};
+  chips($('#tAll'),[['0','أبقي ألوان بطاقاتي المخصصة'],['1','طبّق الثيم على الكل']],S.themeAll?'1':'0',k=>{S.themeAll=k==='1';render();queueSave()});
   [['bg','خلفية'],['bg2','تدرّج'],['card','بطاقة'],['text','نص'],['acc','تمييز']].forEach(([k,l])=>{const w=document.createElement('div');w.innerHTML=`<small>${l}</small><br>`;const c=document.createElement('button');c.className='cb';c.style.background=themeObj()[k];c.onclick=()=>pickColor(themeObj()[k],v=>{S.tc={...themeObj(),n:'مخصص',[k]:v};S.theme='custom';render();queueSave();openThemes()});w.appendChild(c);$('#tcs').appendChild(w)});
   $('#tS').onclick=()=>{const n=$('#tN').value.trim();if(!n)return toast('اكتبي اسماً للثيم');const id='my_'+uid();S.my.push({...themeObj(),id,n});S.theme=id;render();queueSave();openThemes()};
   $('#tX').onclick=()=>show('#themeModal',false);show('#themeModal')}
@@ -321,7 +322,7 @@ function collapseIntro(){$('#intro').classList.add('off')}window.collapseIntro=c
    لا تغيّر بنية البيانات ولا تحذف أي وظيفة موجودة.
    ========================================================== */
 (()=>{
-const KEY='bio_map_snaps',MAXS=8;
+const KEY='bio_map_snaps',MAXS=20;
 /* ملفك يحتوي نافذة استيراد مبسطة: نضيف منتقي الملفات وزر الإضافة إن لم يوجدا */
 if(!$('#ioAdd')){const b=document.createElement('button');b.id='ioAdd';b.className='pri';b.textContent='إضافة للخريطة';$('#ioIn').before(b)}
 if(!$('#ioF')){const f=document.createElement('input');f.type='file';f.id='ioF';f.accept='.json,application/json';$('#ioT').before(f);
@@ -333,7 +334,7 @@ const stamp=()=>new Date().toISOString().slice(0,16).replace(/[:T]/g,'-');
 
 /* --- لقطات محلية (تبقى حتى لو فشل الحفظ السحابي) --- */
 function keep(reason,force){try{const a=snaps(),d=snap();
-  if(a[0]&&(a[0].d===d||(!force&&Date.now()-a[0].t<60000)))return;
+  if(a[0]&&(a[0].d===d||(!force&&Date.now()-a[0].t<30000)))return;
   a.unshift({t:Date.now(),r:reason,n:S.nodes.length,d});
   while(a.length){try{localStorage.setItem(KEY,JSON.stringify(a.slice(0,MAXS)));return}catch(e){a.pop()}}}catch(e){}}
 
@@ -461,22 +462,22 @@ const css=document.createElement('style');css.textContent=`
 document.head.appendChild(css);
 const home=document.createElement('div');home.id='home';home.className='hidden';document.body.appendChild(home);
 const lbar=document.createElement('div');lbar.id='lbar';lbar.className='hidden';
-lbar.innerHTML='<button id="lBack">← رجوع</button><b id="lT"></b>';document.body.appendChild(lbar);
+lbar.innerHTML='<button id="lBack">← رجوع</button><b id="lT"></b><button id="lEdit" class="hidden">✎ تحرير شكل الدرس</button><span id="lTools" class="hidden"><button id="lAdd">＋ فرع</button><button id="lAuto">ترتيب تلقائي</button><button id="lDone" class="pri">✔ حفظ</button></span>';document.body.appendChild(lbar);
 const MOD=(id,z)=>{let m=document.getElementById(id);if(!m){m=document.createElement('div');m.id=id;m.className='modal hidden';m.style.zIndex=z;m.innerHTML='<div class="box"></div>';document.body.appendChild(m)}return m};
 const box=(id,z)=>MOD(id,z).firstChild,close=id=>{const e=document.getElementById(id);if(e)e.classList.add('hidden')};
 const fbox=()=>{const b=box('frm',85);show('#frm');return b};
 const clone=o=>JSON.parse(JSON.stringify(o)),sub=id=>{const rm=new Set([id]);let ch=1;while(ch){ch=0;S.nodes.forEach(x=>{if(!rm.has(x.id)&&rm.has(x.parent)){rm.add(x.id);ch=1}})}return rm};
 const visible=()=>S.cards.filter(c=>!c.hidden&&(!c.lesson||(S.lessons.find(l=>l.id===c.lesson)||{}).pub!==false));
-let live=null;
+let live=null,editing=null,curL=null;
 
 /* --- حماية: لا حفظ ولا مزامنة سحابية أثناء عرض درس مستقل --- */
-const _q=queueSave;queueSave=function(){if(live)return;_q()};
+const _q=queueSave;queueSave=function(){if(live){if(editing)syncLesson();return}_q()};
 const _f=fetchData;fetchData=async function(){if(live)return null;return _f()};
 
 /* ===== الصفحة الرئيسية ===== */
 const GR=['#7c5cff','#ff7a59','#16a085','#2b8fd1','#e0568f','#c2791d'];
 const grad=c=>{let h=0;for(const ch of String(c.id))h=(h*31+ch.charCodeAt(0))>>>0;return `linear-gradient(135deg,${GR[h%6]},${GR[(h>>3)%6]})`};
-const card=c=>`<article class="hcard" data-id="${c.id}" data-q="${esc([c.title,c.desc,c.subject,c.type].join(' ').toLowerCase())}"><div class="hm" style="${c.img?`background-image:url('${c.img}')`:`background:${grad(c)}`}">${c.img?'':`<span>${esc((c.title||'?').trim().charAt(0))}</span>`}</div><div class="hb"><div class="hc">${[c.type,c.subject].filter(Boolean).map(t=>`<i>${esc(t)}</i>`).join('')}</div><h3>${esc(c.title)}</h3><p>${esc(c.desc)}</p><b>${c.lesson?'فتح الدرس ←':'التفاصيل ←'}</b></div></article>`;
+const card=c=>`<article class="hcard" data-id="${c.id}" data-q="${esc([c.title,c.desc,c.subject,c.type].join(' ').toLowerCase())}">${c.img?`<div class="hm" style="background-image:url('${c.img}')"></div>`:`<div class="hbar" style="background:${grad(c)}"></div>`}<div class="hb"><div class="hc">${[c.type,c.subject].filter(Boolean).map(t=>`<i>${esc(t)}</i>`).join('')}</div><h3>${esc(c.title)}</h3><p>${esc(c.desc)}</p><b>${c.lesson?'فتح الدرس ←':'التفاصيل ←'}</b></div></article>`;
 function showHome(v,prev){$('#hud').style.display=v?'none':'';if(!v)return show('#home',false);
   const vis=visible(),latest=vis.filter(c=>c.latest),feat=vis.filter(c=>c.featured);
   const lat=S.homeOrder==='manual'?latest:[...latest].sort((a,b)=>(b.ts||0)-(a.ts||0));
@@ -493,17 +494,27 @@ const _r=render;let first=1;render=function(){_r();if(first){first=0;if(!admin&&
 new MutationObserver(()=>{if(!$('#bar').classList.contains('hidden')&&!live)showHome(false)}).observe($('#bar'),{attributes:true,attributeFilter:['class']});
 
 /* ===== عرض الدرس المستقل (قراءة فقط) ===== */
+function syncLesson(){const L=S.lessons.find(x=>x.id===editing);if(L){L.nodes=clone(S.nodes);L.auto=S.auto}}
 function openLesson(id){const L=S.lessons.find(x=>x.id===id);if(!L||(L.pub===false&&!admin))return toast('الدرس غير منشور');
-  if(!live)live={nodes:S.nodes,auto:S.auto,admin};
+  if(!live)live={nodes:S.nodes,auto:S.auto,admin};curL=id;editing=null;document.body.classList.remove('ledit');
   admin=false;show('#bar',false);show('#home',false);close('cardView');$('#hud').style.display='';
-  S.nodes=clone(L.nodes);S.auto=true;render();fit();$('#lT').textContent=L.title;show('#lbar')}
-function closeLesson(){if(!live)return;S.nodes=live.nodes;S.auto=live.auto;admin=live.admin;live=null;show('#lbar',false);
-  if(admin)show('#bar');render();fit();if(!admin&&visible().length)showHome(true)}
-$('#lBack').onclick=closeLesson;
+  S.nodes=clone(L.nodes);S.auto=L.auto===true;render();fit();$('#lT').textContent=L.title;
+  $('#lEdit').classList.toggle('hidden',!live.admin);$('#lTools').classList.add('hidden');show('#lbar')}
+function closeLesson(){if(!live)return;const was=editing;if(was)syncLesson();editing=null;document.body.classList.remove('ledit');
+  S.nodes=live.nodes;S.auto=live.auto;admin=live.admin;live=null;show('#lbar',false);if(admin)show('#bar');render();fit();
+  if(was){queueSave();toast('حُفظ شكل الدرس')}if(!admin&&visible().length)showHome(true)}
+$('#lBack').onclick=closeLesson;$('#lDone').onclick=closeLesson;
+$('#lEdit').onclick=()=>{if(!live||!live.admin)return;editing=curL;admin=true;S.auto=false;document.body.classList.add('ledit');
+  $('#lEdit').classList.add('hidden');$('#lTools').classList.remove('hidden');render();toast('اسحبي البطاقات لتغيير الشكل، ثم اضغطي ✔ حفظ')};
+$('#lAdd').onclick=()=>{const n={id:uid(),parent:null,title:'عنوان جديد',text:'',x:(innerWidth/2-view.x)/view.k-140,y:(innerHeight/2-view.y)/view.k-40};S.nodes.push(n);render();openEdit(n);queueSave()};
+$('#lAuto').onclick=()=>{S.auto=true;render();S.auto=false;fit();queueSave()};
+addEventListener('keydown',e=>{if(editing&&(e.ctrlKey||e.metaKey)&&['z','y'].includes(e.key.toLowerCase())){e.stopImmediatePropagation();e.preventDefault();toast('التراجع غير متاح أثناء تحرير الدرس')}},true);
 
 /* ===== نماذج ===== */
-const img=(t)=>{$('#fI').onchange=async e=>{if(e.target.files[0]){t.img=await readImg(e.target.files[0]);toast('تمت إضافة الصورة')}};$('#fR').onclick=()=>{delete t.img;toast('حُذفت الصورة')}};
-const imgRow='<div class="row"><input type="file" id="fI" accept="image/*"><button id="fR">حذف الصورة</button></div>';
+const img=(t)=>{const pv=()=>{const p=$('#fP');p.classList.toggle('hidden',!t.img);p.innerHTML=t.img?`<img src="${t.img}" alt="">`:''};
+  $('#fI').onchange=async e=>{if(e.target.files[0]){t.img=await readImg(e.target.files[0]);pv()}};
+  $('#fR').onclick=()=>{delete t.img;$('#fI').value='';pv();toast('حُذفت الصورة')};pv()};
+const imgRow='<small>الصورة (اختيارية)</small><div id="fP" class="hidden"></div><div class="row"><input type="file" id="fI" accept="image/*"><button id="fR" type="button">حذف الصورة</button></div>';
 const ok='<div class="row"><button id="fOk" class="pri">حفظ</button><button id="fNo">إلغاء</button></div>';
 const chk=(id,l,v)=>`<label class="chk"><input type="checkbox" id="${id}"${v?' checked':''}> ${l}</label>`;
 
@@ -513,7 +524,7 @@ function cardForm(old){const c=old?{...old}:{id:uid(),title:'',desc:'',type:'م�
   $('#fNo').onclick=()=>close('frm');
   $('#fOk').onclick=()=>{const t=$('#fT').value.trim();if(!t)return toast('اكتبي عنواناً');
     Object.assign(c,{title:t,desc:$('#fD').value,type:$('#fY').value,subject:$('#fS').value,lesson:$('#fL').value||undefined,latest:$('#fa').checked,featured:$('#fb').checked,hidden:$('#fh').checked});
-    if(old)Object.assign(old,c);else{c.ts=Date.now();S.cards.push(c)}close('frm');queueSave();mgr();toast('تم الحفظ')}}
+    if(old){Object.assign(old,c);if(!c.img)delete old.img}else{c.ts=Date.now();S.cards.push(c)}close('frm');queueSave();mgr();toast('تم الحفظ')}}
 
 /* ===== حفظ الفرع كدرس مستقل ===== */
 let pick=0;
@@ -530,7 +541,7 @@ function lessonForm(n){const rm=sub(n.id),b=fbox();
     const nodes=S.nodes.filter(x=>rm.has(x.id)).map(x=>({...clone(x),id:map[x.id],parent:x.id===n.id?null:map[x.parent]}));
     let p=n,dir=null;while(p&&!dir){if(p.dir&&p.dir!=='I')dir=p.dir;p=S.nodes.find(x=>x.id===p.parent)}
     nodes.find(x=>x.parent===null).dir=dir||'L';
-    const L={id:uid(),title,desc:$('#fD').value,cat:$('#fS').value,img:t.img,nodes,ts:Date.now(),pub:true};S.lessons.push(L);
+    const L={id:uid(),title,desc:$('#fD').value,cat:$('#fS').value,img:t.img,nodes,ts:Date.now(),pub:true,auto:false};S.lessons.push(L);
     if($('#fh').checked)S.cards.push({id:uid(),title,desc:L.desc,type:'درس',subject:L.cat,img:L.img,lesson:L.id,latest:$('#fa').checked,featured:$('#fb').checked,hidden:false,ts:L.ts});
     clear();close('frm');queueSave();toast('تم إنشاء الدرس ('+nodes.length+' بطاقة)')}}
 
@@ -646,6 +657,164 @@ let ready=0;const _a=applyTheme;applyTheme=function(){_a();if(!ready)return;try{
   localStorage.setItem('bio_look',JSON.stringify({v,f:st.getPropertyValue('--font')}))}catch(e){}};
 const sp0=$('#splash'),hide=()=>{if(!sp0||!sp0.parentNode)return;sp0.classList.add('gone');setTimeout(()=>sp0.remove(),500)};
 const _r=render;render=function(){ready=1;_r();hide()};setTimeout(hide,7000);
+})();
+
+/* ==========================================================
+   إضافة ٦: أرقام النسخ وسجلها، ألوان البطاقات، تنظيم قائمة التحرير،
+   إصلاح خروج النص عن الأشكال، حجم النص
+   ========================================================== */
+(()=>{
+const css=document.createElement('style');css.textContent=`
+.node{box-sizing:border-box}
+.node h3,.node p{overflow-wrap:anywhere;word-break:break-word;min-width:0}
+.node h3{font-size:calc(17px*var(--fs,1));line-height:1.5}.node p{font-size:calc(14px*var(--fs,1))}
+.hbar{height:6px}
+#fP img{max-width:100%;max-height:150px;border-radius:14px;object-fit:cover;display:block}
+#toast{top:auto;bottom:max(24px,env(safe-area-inset-bottom))}
+:focus-visible{outline:3px solid color-mix(in srgb,var(--accent) 55%,transparent);outline-offset:2px}
+button:disabled{opacity:.45;cursor:not-allowed}
+.box h2{font-size:20px}.box small{font-weight:600;color:var(--muted);margin-top:4px}
+.box>.row:last-child{margin-top:8px}
+#vchip{background:var(--bg2);color:var(--text);padding:7px 12px;border-radius:999px;font-size:13px;font-weight:700}
+.di{display:flex;gap:12px;align-items:center}.di .ic{font-size:19px;width:28px;text-align:center;flex-shrink:0}
+.di .tx{display:flex;flex-direction:column;gap:1px}.di .tx b{font-weight:600}.di .tx small{color:var(--muted);font-size:12px;font-weight:400}
+#drawer h4{border-top:1px solid var(--line);padding-top:12px;margin-top:12px}#drawer section:first-child h4{border:0;padding:0}
+.dv{margin-top:12px;color:var(--muted);font-size:12px;text-align:center}
+.vrow{display:flex;align-items:center;gap:10px;justify-content:space-between;border:1px solid var(--line);border-radius:16px;padding:10px 12px}
+.vrow.cur{border-color:var(--accent)}.vrow b{display:block}.vrow small{display:block;font-weight:400}.vrow button{padding:6px 12px;min-height:36px}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}`;
+document.head.appendChild(css);
+const mkE=(t,c,p)=>{const e=document.createElement(t);if(c)e.className=c;if(p)p.appendChild(e);return e};
+const box=(id,z)=>{let m=document.getElementById(id);if(!m){m=mkE('div','modal hidden',document.body);m.id=id;m.style.zIndex=z;m.innerHTML='<div class="box"></div>'}return m.firstChild};
+const bar=$('#bar'),find=t=>[...bar.querySelectorAll('button')].find(b=>b.textContent.trim()===t);
+
+/* إعادة القياس عند تغيّر الخط أو حجم البطاقة حتى لا يخرج النص عن الشكل */
+let rq=0;const reflow=()=>{if(rq)return;rq=requestAnimationFrame(()=>{rq=0;try{if(S.nodes.length){if(S.auto)layout();place();edges()}}catch(e){}})};
+if(document.fonts)document.fonts.addEventListener('loadingdone',reflow);
+const ro=window.ResizeObserver?new ResizeObserver(reflow):null;
+const setFs=()=>{document.documentElement.style.setProperty('--fs',S.fs||1);setTimeout(reflow,60)};
+
+/* رقم النسخة */
+let mx=+localStorage.getItem('bio_maxrev')||0,last='',init=0;
+const vch=mkE('span','',null);vch.id='vchip';$('#ebar').insertBefore(vch,$('#cs'));
+const showV=()=>{vch.textContent='نسخة '+(S.rev||0);const d=$('#dvn');if(d)d.textContent=S.rev||0};
+const _q=queueSave;queueSave=function(){const lb=$('#lbar');
+  if(!(lb&&!lb.classList.contains('hidden'))){const cur=JSON.stringify({...S,rev:0});
+    if(cur!==last){last=cur;mx=Math.max(mx,S.rev||0)+1;S.rev=mx;try{localStorage.setItem('bio_maxrev',mx)}catch(e){}}showV()}
+  _q()};
+const _a=applyTheme;applyTheme=function(){_a();document.documentElement.style.setProperty('--fs',S.fs||1)};
+const _r=render;render=function(){_r();if(!init){init=1;last=JSON.stringify({...S,rev:0})}showV();
+  if(ro){ro.disconnect();nodesEl.querySelectorAll('.node').forEach(e=>ro.observe(e))}};
+
+/* سجل النسخ */
+const KEY='bio_map_snaps',getS=()=>{try{return JSON.parse(localStorage.getItem(KEY)||'[]')}catch(e){return[]}};
+const putS=a=>{while(a.length){try{localStorage.setItem(KEY,JSON.stringify(a));return}catch(e){a.pop()}}};
+const addSnap=r=>{const a=getS();a.unshift({t:Date.now(),r,n:S.nodes.length,d:JSON.stringify(S)});putS(a.slice(0,30))};
+const dl=(n,t)=>{const a=mkE('a','',document.body);a.href=URL.createObjectURL(new Blob([t],{type:'application/json'}));a.download=n;a.click();a.remove()};
+const revOf=x=>{try{return JSON.parse(x.d).rev||0}catch(e){return 0}};
+function versions(){const b=box('verM',75),a=getS();
+  const rows=a.map((x,i)=>{const rv=revOf(x),cur=i===0&&rv===(S.rev||0);
+    return `<div class="vrow${cur?' cur':''}"><div><b>نسخة ${rv}${cur?' (الحالية)':''}</b><small>${new Date(x.t).toLocaleString('ar')} · ${x.n} بطاقة · ${esc(x.r||'')}</small></div><span><button data-i="${i}" data-a="r">استعادة</button> <button data-i="${i}" data-a="d" aria-label="تنزيل">⬇</button></span></div>`}).join('')||'<small>لا توجد نسخ محفوظة بعد</small>';
+  b.innerHTML=`<h2>سجل النسخ</h2><small>أنتِ الآن على: نسخة ${S.rev||0}</small><button id="vN" class="pri">حفظ نسخة مسماة الآن</button>${rows}<small>تُحفظ آخر ٣٠ نسخة على هذا الجهاز، وتشمل الخريطة والبطاقات والدروس. نزّلي ملفًا احتياطيًا من وقت لآخر.</small><div class="row"><button id="vX">إغلاق</button></div>`;
+  b.onclick=async e=>{const t=e.target.closest('button');if(!t)return;
+    if(t.id==='vX')return show('#verM',false);
+    if(t.id==='vN'){const n=await ask('اسم النسخة (مثال: قبل تعديل الخلية)',{input:1,ok:'حفظ'});if(n){addSnap(n);versions();toast('حُفظت النسخة')}return}
+    const x=a[+t.dataset.i];if(!x)return;
+    if(t.dataset.a==='d')return dl(`نسخة-${revOf(x)}-${new Date(x.t).toISOString().slice(0,10)}.json`,x.d);
+    if(await ask(`استعادة نسخة ${revOf(x)}؟ سيُحفظ وضعك الحالي أولاً كنسخة.`,{ok:'استعادة'})){
+      addSnap('قبل الاستعادة من نسخة '+revOf(x));S={...S,...JSON.parse(x.d)};mx=Math.max(mx,S.rev||0)+1;S.rev=mx;
+      last=JSON.stringify({...S,rev:0});render();fit();queueSave();versions();toast('تمت الاستعادة')}};
+  show('#verM')}
+
+/* ألوان البطاقات: تطبيق الثيم على الكل أو الإبقاء على ألوانك، مع إمكانية الإرجاع */
+function colorsDlg(){const b=box('colM',75),cn=S.nodes.filter(n=>n.color||n.edge).length,bk=S.colorBackup?Object.keys(S.colorBackup).length:0;
+  b.innerHTML=`<h2>ألوان البطاقات</h2><small>بطاقات لها لون خاص: ${cn}</small><p style="margin:0;line-height:1.7">عند تغيير الثيم تبقى البطاقات الملوّنة بألوانها. اختاري ما يناسبك:</p><button id="cA" class="pri"${cn?'':' disabled'}>تطبيق الثيم على الكل بلا استثناء</button><small>يزيل ألوان البطاقات والأسهم الخاصة ويحفظها لتتمكني من إرجاعها.</small><button id="cR"${bk?'':' disabled'}>إرجاع ألواني السابقة (${bk})</button><div class="row"><button id="cX">إغلاق</button></div>`;
+  $('#cX').onclick=()=>show('#colM',false);
+  $('#cA').onclick=async()=>{if(!await ask('تطبيق ألوان الثيم على كل البطاقات والأسهم؟ يمكنك الإرجاع بعدها.',{ok:'تطبيق'}))return;
+    const k={};S.nodes.forEach(n=>{if(n.color||n.edge){k[n.id]={color:n.color,edge:n.edge};delete n.color;delete n.edge}});S.colorBackup=k;render();queueSave();colorsDlg();toast('طُبّق الثيم على الكل')};
+  $('#cR').onclick=()=>{S.nodes.forEach(n=>{const o=S.colorBackup[n.id];if(o){if(o.color)n.color=o.color;if(o.edge)n.edge=o.edge}});delete S.colorBackup;render();queueSave();colorsDlg();toast('أُرجعت ألوانك')};
+  show('#colM')}
+function sizeDlg(){const b=box('fsM',75);b.innerHTML='<h2>حجم النص</h2><small>يؤثر على كل البطاقات</small><div class="chips" id="fsC"></div><div class="row"><button id="fsX" class="pri">تم</button></div>';
+  chips($('#fsC'),[[.9,'صغير'],[1,'متوسط'],[1.15,'كبير']],S.fs||1,k=>{S.fs=+k;setFs();queueSave()});$('#fsX').onclick=()=>show('#fsM',false);show('#fsM')}
+
+/* إعادة بناء قائمة التحرير بعناوين وشرح واضح */
+const dB=$('#dB'),autoL=$('#bAuto').closest('label'),close=()=>$('#scrim').click();dB.innerHTML='';
+const grp=t=>{const s=mkE('section','',dB);mkE('h4','',s).textContent=t;return s};
+const item=(p,ic,t,h,fn,cls)=>{const i=mkE('button','di'+(cls?' '+cls:''),p);i.innerHTML=`<span class="ic">${ic}</span><span class="tx"><b>${t}</b>${h?`<small>${h}</small>`:''}</span>`;i.onclick=()=>{close();fn()}};
+let g=grp('الخريطة');
+item(g,'＋','فرع رئيسي جديد','إضافة موضوع جديد للخريطة',()=>find('＋ فرع رئيسي').click());
+item(g,'↯','ترتيب تلقائي الآن','إعادة ترتيب كل البطاقات',()=>find('ترتيب تلقائي').click());g.appendChild(autoL);
+item(g,'⤢','توسيط الخريطة','عرض كل البطاقات داخل الشاشة',()=>$('#zfit').click());
+g=grp('المحتوى');
+item(g,'⌂','الصفحة الرئيسية','البطاقات والدروس المنشورة',()=>find('📋 الصفحة الرئيسية').click());
+item(g,'✂','حفظ فرع كدرس مستقل','تحويل فرع من الخريطة إلى درس',()=>find('✂ حفظ الفرع كدرس').click());
+item(g,'✎','عنوان الموقع','العنوان والعنوان الفرعي',()=>find('✎ العنوان').click());
+g=grp('المظهر');
+item(g,'◐','الثيمات','اختيار الألوان وحفظ ثيم خاص',()=>find('🎨 الثيمات').click());
+item(g,'Aa','الخط والوضع','نوع الخط، فاتح أو داكن',()=>find('Aa الخط والوضع').click());
+item(g,'▣','ألوان البطاقات','تطبيق الثيم على الكل أو إرجاع ألوانك',colorsDlg);
+item(g,'A','حجم النص','صغير، متوسط، كبير',sizeDlg);
+g=grp('البيانات والنسخ');
+item(g,'⇅','تصدير / استيراد','ملف JSON أو لصق كود',()=>find('⇅ تصدير/استيراد').click());
+item(g,'⬇','تنزيل نسخة احتياطية','ملف على جهازك',()=>find('⬇ نسخة احتياطية').click());
+item(g,'↺','سجل النسخ والاستعادة','رقم كل نسخة والرجوع إليها',versions);
+item(mkE('div','',dB),'⎋','خروج من وضع التحرير','',()=>find('خروج').click(),'out');
+const dv=mkE('div','dv',$('#drawer'));dv.innerHTML='النسخة الحالية: <b id="dvn">0</b>';
+showV();setFs();
+})();
+
+/* ==========================================================
+   إضافة ٧: فصل/ربط الحبال بين البطاقات + خرائط متعددة تختارين المعروضة منها
+   ========================================================== */
+(()=>{
+const css=document.createElement('style');css.textContent=`
+body.ledit #ebar,body.ledit #hot{display:none!important}
+#lbar{overflow-x:auto;scrollbar-width:none}#lbar>*{flex-shrink:0}#lbar #lT{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:60px}
+#lTools{display:flex;gap:6px}
+.tools button[data-a=cut],.tools button[data-a=link]{font-size:13px}`;
+document.head.appendChild(css);
+const mkE=(t,c,p)=>{const e=document.createElement(t);if(c)e.className=c;if(p)p.appendChild(e);return e};
+const box=(id,z)=>{let m=document.getElementById(id);if(!m){m=mkE('div','modal hidden',document.body);m.id=id;m.style.zIndex=z;m.innerHTML='<div class="box"></div>'}return m.firstChild};
+const cl=o=>JSON.parse(JSON.stringify(o));
+
+/* أزرار فصل ✂ وربط 🔗 على كل بطاقة في وضع التحرير */
+const _r=render;render=function(){_r();if(!admin)return;
+  nodesEl.querySelectorAll('.node .tools').forEach(t=>{const n=S.nodes.find(x=>x.id===t.parentNode.dataset.id);if(!n)return;
+    if(n.parent)t.insertAdjacentHTML('beforeend','<button data-a="cut" title="فصل عن الأب">✂</button>');
+    t.insertAdjacentHTML('beforeend','<button data-a="link" title="ربط ببطاقة أخرى">🔗</button>')})};
+let lk=null;
+nodesEl.addEventListener('click',e=>{const b=e.target.closest('[data-a=cut],[data-a=link]');if(!b)return;
+  const n=S.nodes.find(x=>x.id===b.closest('.node').dataset.id);if(!n)return;
+  if(b.dataset.a==='cut'){n.parent=null;render();queueSave();toast('فُصلت البطاقة. اضغطي 🔗 لربطها ببطاقة أخرى')}
+  else{lk=n.id;toast('اضغطي على البطاقة التي ستصبح الأب (أو اضغطي مكانًا فارغًا للإلغاء)')}});
+nodesEl.addEventListener('pointerdown',e=>{if(!lk)return;const d=e.target.closest('.node');if(!d)return;
+  e.stopImmediatePropagation();e.preventDefault();const id=lk;lk=null;const t=d.dataset.id,n=S.nodes.find(x=>x.id===id);
+  if(!n||t===id)return toast('اختاري بطاقة أخرى');
+  const ds=new Set([id]);let ch=1;while(ch){ch=0;S.nodes.forEach(x=>{if(!ds.has(x.id)&&ds.has(x.parent)){ds.add(x.id);ch=1}})}
+  if(ds.has(t))return toast('لا يمكن الربط بفرع تابع لنفس البطاقة');
+  n.parent=t;render();queueSave();toast('تم الربط')},true);
+vp.addEventListener('pointerdown',e=>{if(lk&&!e.target.closest('.node')){lk=null;toast('أُلغي الربط')}});
+
+/* خرائط متعددة: الخريطة المعروضة للزوار هي الحالية */
+const ensure=()=>{if(!S.maps||!S.maps.length){S.maps=[{id:'m0',name:'الخريطة الرئيسية'}];S.curMap='m0'}};
+function mapsDlg(){ensure();const b=box('mapM',75);
+  const rows=S.maps.map(m=>{const cur=m.id===S.curMap,n=cur?S.nodes.length:(m.nodes||[]).length;
+    return `<div class="vrow${cur?' cur':''}" data-id="${m.id}"><div><b>${esc(m.name)}${cur?' (المعروضة الآن)':''}</b><small>${n} بطاقة</small></div><span>${cur?'':'<button data-a="use" class="pri">عرض</button> '}<button data-a="ren" aria-label="إعادة تسمية">✎</button>${cur?'':' <button data-a="del" aria-label="حذف">✕</button>'}</span></div>`}).join('');
+  b.innerHTML=`<h2>الخرائط</h2><small>الزوار يرون الخريطة المعروضة الآن فقط. يمكنك حفظ حتى ٥ خرائط والتبديل بينها في أي وقت. الدروس المستقلة لا تتأثر بالتبديل.</small>${rows}<div class="row"><button id="mN">＋ خريطة فارغة</button><button id="mC">⎘ نسخ الحالية</button></div><div class="row"><button id="mX">إغلاق</button></div>`;
+  const add=async(copy)=>{if(S.maps.length>=5)return toast('الحد الأقصى ٥ خرائط');
+    const n=await ask('اسم الخريطة الجديدة',{input:1,val:copy?'نسخة من '+S.maps.find(m=>m.id===S.curMap).name:'خريطة ٢',ok:'إنشاء'});if(!n)return;
+    S.maps.push({id:uid(),name:n,nodes:copy?cl(S.nodes):[],auto:copy?S.auto:true});queueSave();mapsDlg()};
+  $('#mX').onclick=()=>show('#mapM',false);$('#mN').onclick=()=>add(0);$('#mC').onclick=()=>add(1);
+  b.onclick=async e=>{const t=e.target.closest('button[data-a]');if(!t)return;const m=S.maps.find(x=>x.id===t.closest('.vrow').dataset.id);if(!m)return;
+    if(t.dataset.a==='ren'){const n=await ask('اسم الخريطة',{input:1,val:m.name,ok:'حفظ'});if(n){m.name=n;queueSave();mapsDlg()}}
+    else if(t.dataset.a==='del'){if(await ask('حذف خريطة «'+m.name+'»؟',{ok:'حذف'})){S.maps=S.maps.filter(x=>x!==m);queueSave();mapsDlg()}}
+    else if(await ask('عرض «'+m.name+'» للزوار بدل الخريطة الحالية؟ الحالية تُحفظ ويمكنك الرجوع لها.',{ok:'تبديل'})){
+      const c=S.maps.find(x=>x.id===S.curMap);c.nodes=cl(S.nodes);c.auto=S.auto;
+      S.nodes=cl(m.nodes||[]);S.auto=m.auto!==false;delete m.nodes;S.curMap=m.id;render();fit();queueSave();mapsDlg();toast('تم التبديل')}};
+  show('#mapM')}
+const sec=[...document.querySelectorAll('#drawer h4')].find(h=>h.textContent==='الخريطة').parentNode;
+const it=mkE('button','di',null);it.innerHTML='<span class="ic">▤</span><span class="tx"><b>الخرائط المحفوظة</b><small>تبديل أو نسخ أو إضافة خريطة</small></span>';
+it.onclick=()=>{$('#scrim').click();mapsDlg()};sec.insertBefore(it,sec.children[1]);
 })();
 </script>
 </body>
